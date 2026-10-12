@@ -25,6 +25,8 @@
 #include <net.h>
 #include <watchdog.h>
 
+#include "../board/digi/common/trustfence.h"
+
 DECLARE_GLOBAL_DATA_PTR;
 
 /************************************************************************
@@ -385,6 +387,11 @@ static int env_update_fdt_addr_from_bloblist(void)
 	return env_set_hex("fdt_addr", (uintptr_t)map_to_sysmem(gd->fdt_blob));
 }
 
+__weak void platform_default_environment(void)
+{
+	return;
+}
+
 void env_set_default(const char *s, int flags)
 {
 	if (s) {
@@ -406,6 +413,9 @@ void env_set_default(const char *s, int flags)
 		       errno);
 		return;
 	}
+
+	/* Platform-specific actions on default environment */
+	platform_default_environment();
 
 	gd->flags |= GD_FLG_ENV_READY;
 	gd->flags |= GD_FLG_ENV_DEFAULT;
@@ -454,6 +464,23 @@ int env_import(const char *buf, int check, int flags)
 			return -ENOMSG; /* needed for env_load() */
 		}
 	}
+
+#ifdef CONFIG_ENV_ENCRYPT
+	int ret = env_crypt(ep, 0);
+	if (ret) {
+		if (himport_r(&env_htab, (char *)ep->data, ENV_SIZE,
+			      '\0', flags, 0, 0, NULL)) {
+			printf("Environment is unencrypted!\n");
+			printf("Resetting to defaults (read-only variables like MAC addresses will be kept).\n");
+			gd->flags |= GD_FLG_ENV_READY;
+			run_command("env default -a", 0);
+			return 0;
+		}
+		pr_err("Failed to decrypt env!\n");
+		env_set_default("!import failed", 0);
+		return ret;
+	}
+#endif
 
 	if (himport_r(&env_htab, (char *)ep->data, ENV_SIZE, '\0', flags, 0,
 			0, NULL)) {
@@ -563,6 +590,18 @@ int env_import_redund(const char *buf1, int buf1_read_fail,
 		env_set_default("bad env area", 0);
 		return -EIO;
 	} else if (ret == -ENOMSG) {
+#if defined(OLD_ENV_OFFSET_LOCATIONS)
+		static int old_env_tries = OLD_ENV_OFFSET_LOCATIONS;
+
+		/*
+		 * Return error but don't reset the environment yet.
+		 * We'll try to restore it from the old location.
+		 */
+		if (old_env_tries) {
+			old_env_tries--;
+			return -ENOMSG;
+		}
+#endif
 		env_set_default("bad CRC", 0);
 		return -ENOMSG;
 	}
@@ -590,6 +629,12 @@ int env_export(env_t *env_out)
 		pr_err("Cannot export environment: errno = %d\n", errno);
 		return 1;
 	}
+
+#ifdef CONFIG_ENV_ENCRYPT
+	int ret = env_crypt(env_out, 1);
+	if (ret)
+		return ret;
+#endif
 
 	env_out->crc = crc32(0, env_out->data, ENV_SIZE);
 

@@ -290,6 +290,11 @@ config MAX7320_GPIO
 	 original maxim device has 8 push/pull outputs,
 	 some clones offers 16bit.
 
+config MCA_GPIO
+	bool "Digi MCA GPIO driver"
+	help
+	  Support MCA GPIO controller on Digi modules
+
 config MAX77663_GPIO
 	bool "MAX77663 GPIO cell of PMIC driver"
 	depends on DM_GPIO && DM_PMIC_MAX77663

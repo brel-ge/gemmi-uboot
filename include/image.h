@@ -836,6 +836,11 @@ int boot_ramdisk_high(ulong rd_data, ulong rd_len, ulong *initrd_start,
 int boot_get_cmdline(ulong *cmd_start, ulong *cmd_end);
 int boot_get_kbd(struct bd_info **kbd);
 
+#ifdef CONFIG_AUTH_DISCRETE_ARTIFACTS
+void fdt_file_init_authentication(void);
+int fdt_file_authenticate(char *loadaddr);
+#endif /* CONFIG_AUTH_DISCRETE_ARTIFACTS */
+
 /*******************************************************************/
 /* Legacy format specific code (prefixed with image_) */
 /*******************************************************************/

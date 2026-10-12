@@ -1237,6 +1237,126 @@ static int do_mmc_reg(struct cmd_tbl *cmdtp, int flag,
 }
 #endif
 
+#ifdef CONFIG_SUPPORT_MMC_ECSD
+static int do_mmcecsd_dump(struct cmd_tbl *cmdtp, int flag,
+			   int argc, char *const argv[])
+{
+	struct mmc *mmc = find_mmc_device(curr_device);
+	int field;
+	int ret;
+	ALLOC_CACHE_ALIGN_BUFFER(u8, ext_csd, 512);
+
+	ret = mmc_send_ext_csd(mmc, ext_csd);
+	if (ret) {
+		printf("Can't access ECSD!\n");
+		return ret;
+	}
+
+	for (field = 0; field < 511; field++)
+		printf("ECSD[%d]: 0x%08x\n", field, ext_csd[field]);
+
+	return 0;
+}
+
+static int do_mmcecsd_read(struct cmd_tbl *cmdtp, int flag,
+			   int argc, char *const argv[])
+{
+	struct mmc *mmc = find_mmc_device(curr_device);
+	int field;
+	int ret;
+	ALLOC_CACHE_ALIGN_BUFFER(u8, ext_csd, 512);
+
+	ret = mmc_send_ext_csd(mmc, ext_csd);
+	if (ret) {
+		printf("Can't access ECSD!\n");
+		return ret;
+	}
+
+	field = simple_strtoul(argv[1], NULL, 16);
+	if (field >= 0 && field < 512) {
+		printf("ECSD[%d]: 0x%08x\n", field, ext_csd[field]);
+		return 0;
+	} else {
+		printf("Invalid field offset. Must be within range 0..511\n");
+		return 1;
+	}
+
+	return 0;
+}
+
+static int do_mmcecsd_write(struct cmd_tbl *cmdtp, int flag,
+			    int argc, char *const argv[])
+{
+	struct mmc *mmc = find_mmc_device(curr_device);
+	unsigned int field;
+	unsigned int val;
+	int ret;
+	ALLOC_CACHE_ALIGN_BUFFER(u8, ext_csd, 512);
+
+	field = simple_strtoul(argv[1], NULL, 16);
+	val = simple_strtoul(argv[2], NULL, 16);
+
+	ret = mmc_send_ext_csd(mmc, ext_csd);
+	if (ret) {
+		printf("Can't access ECSD!\n");
+		return ret;
+	}
+
+	/* only modes segment (0..191) can be modified */
+	if (field >= 0 && field <= 191) {
+		ret = mmc_switch_any(mmc, field, val);
+		if (ret) {
+			printf("Can't access ECSD.\n");
+			return ret;
+		}
+		return 0;
+	} else {
+		printf("Invalid field offset. Must be within range 0..191\n");
+		return 1;
+	}
+
+	return 0;
+}
+
+static struct cmd_tbl cmd_ecsd[] = {
+	U_BOOT_CMD_MKENT(dump, 1, 1, do_mmcecsd_dump, "", ""),
+	U_BOOT_CMD_MKENT(read, 2, 1, do_mmcecsd_read, "", ""),
+	U_BOOT_CMD_MKENT(write, 3, 0, do_mmcecsd_write, "", ""),
+};
+
+static int do_mmcecsd(struct cmd_tbl *cmdtp, int flag,
+		      int argc, char *const argv[])
+{
+	struct cmd_tbl *cp;
+	struct mmc *mmc;
+
+	cp = find_cmd_tbl(argv[1], cmd_ecsd, ARRAY_SIZE(cmd_ecsd));
+	/* Drop the ecsd subcommand */
+	argc--;
+	argv++;
+
+	if (cp == NULL || argc > cp->maxargs)
+		return CMD_RET_USAGE;
+	if (flag == CMD_FLAG_REPEAT && !cmd_is_repeatable(cp))
+		return CMD_RET_SUCCESS;
+
+	mmc = init_mmc_device(curr_device, false);
+	if (!mmc)
+		return CMD_RET_FAILURE;
+
+	if (!(mmc->version & MMC_VERSION_MMC)) {
+		printf("It is not a EMMC device\n");
+		return CMD_RET_FAILURE;
+	}
+	if (mmc->version < MMC_VERSION_4_41) {
+		printf("RPMB not supported before version 4.41\n");
+		return CMD_RET_FAILURE;
+	}
+
+	return cp->cmd(cmdtp, flag, argc, argv);
+}
+#endif /* CONFIG_SUPPORT_MMC_ECSD */
+
 static struct cmd_tbl cmd_mmc[] = {
 	U_BOOT_CMD_MKENT(info, 1, 0, do_mmcinfo, "", ""),
 	U_BOOT_CMD_MKENT(read, 4, 1, do_mmc_read, "", ""),
@@ -1271,6 +1391,9 @@ static struct cmd_tbl cmd_mmc[] = {
 #endif
 #if CONFIG_IS_ENABLED(CMD_MMC_REG)
 	U_BOOT_CMD_MKENT(reg, 5, 0, do_mmc_reg, "", ""),
+#endif
+#ifdef CONFIG_SUPPORT_MMC_ECSD
+	U_BOOT_CMD_MKENT(ecsd, CONFIG_SYS_MAXARGS, 1, do_mmcecsd, "", ""),
 #endif
 };
 
@@ -1366,6 +1489,11 @@ U_BOOT_CMD(
 	"                                    (optionally into [env] variable)\n"
 	" - reg: cid/csd/dsr/ocr/rca/extcsd\n"
 	" - offset: for cid/csd [0..3], for extcsd [0..511,all]\n"
+#endif
+#ifdef CONFIG_SUPPORT_MMC_ECSD
+	"mmc ecsd dump - dump ECSD values\n"
+	"mmc ecsd read offset - read ECSD value at offset\n"
+	"mmc ecsd write offset value - write ECSD value at offset\n"
 #endif
 	);
 

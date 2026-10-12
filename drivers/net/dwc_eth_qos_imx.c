@@ -215,7 +215,11 @@ static int eqos_get_enetaddr_imx(struct udevice *dev)
 {
 	struct eth_pdata *pdata = dev_get_plat(dev);
 
+#ifdef CONFIG_NO_MAC_FROM_OTP
+	memset(pdata->enetaddr, 0, sizeof(pdata->enetaddr));
+#else
 	imx_get_mac_from_fuse(dev_seq(dev), pdata->enetaddr);
+#endif
 
 	return 0;
 }

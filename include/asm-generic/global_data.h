@@ -612,9 +612,9 @@ enum gd_flags {
 	 */
 	GD_FLG_LOGINIT = 0x00020,
 	/**
-	 * @GD_FLG_DISABLE_CONSOLE: disable console (in & out)
+	 * @GD_FLG_DISABLE_CONSOLE_INPUT: disable console (in)
 	 */
-	GD_FLG_DISABLE_CONSOLE = 0x00040,
+	GD_FLG_DISABLE_CONSOLE_INPUT = 0x00040,
 	/**
 	 * @GD_FLG_ENV_READY: environment imported into hash table
 	 */
@@ -702,7 +702,15 @@ enum gd_flags {
 	 * drivers shall not be called.
 	 */
 	GD_FLG_HAVE_CONSOLE = 0x8000000,
+	/**
+	 * @GD_FLG_DISABLE_CONSOLE_OUTPUT: disable console (out)
+	 */
+	GD_FLG_DISABLE_CONSOLE_OUTPUT = 0x10000000,
 };
+
+/* Disable console (in & out) */
+#define GD_FLG_DISABLE_CONSOLE		(GD_FLG_DISABLE_CONSOLE_INPUT | \
+					 GD_FLG_DISABLE_CONSOLE_OUTPUT)
 
 #endif /* __ASSEMBLY__ */
 

@@ -228,6 +228,15 @@ endif
 endif
 endif
 
+u-boot-dtb-signed.imx: u-boot-dtb.imx FORCE
+	$(srctree)/scripts/sign.sh $< $@
+
+u-boot-dtb-usb-signed.imx: u-boot-dtb.imx FORCE
+	ENABLE_USB_SIGN=y $(srctree)/scripts/sign.sh $< $@
+
+u-boot-dtb-encrypted.imx: u-boot-dtb.imx FORCE
+	ENABLE_ENCRYPTION=y $(srctree)/scripts/sign.sh $< $@
+
 ifdef CONFIG_ARM64
 ifeq ($(CONFIG_ARCH_IMX8M), y)
 

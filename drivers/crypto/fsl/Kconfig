@@ -87,6 +87,13 @@ config SPL_FSL_CAAM_RNG
 	  This option is an SPL-variant of the FSL_CAAM_RNG option.
 	  See the help of FSL_CAAM_RNG for details.
 
+config FSL_CAAM_RNG_ERRATA
+	bool "Enable SW test for CAAM TRNG Output"
+	help
+		Selecting this will disable CAAM RNG HW health tests and
+		enable SW tests for TRNG output data. Then, instantiate DRBG
+		in deterministic mode.
+
 config FSL_BLOB
 	bool "Enable Blob Encap/Decap, Blob KEK support"
 

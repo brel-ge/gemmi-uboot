@@ -1944,6 +1944,7 @@ enum env_location arch_env_get_location(enum env_operation op, int prio)
 	case MMC1_BOOT:
 	case MMC2_BOOT:
 	case MMC3_BOOT:
+	case USB_BOOT:
 		if (IS_ENABLED(CONFIG_ENV_IS_IN_MMC))
 			return ENVL_MMC;
 		else if (IS_ENABLED(CONFIG_ENV_IS_IN_EXT4))

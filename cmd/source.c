@@ -22,6 +22,10 @@
 #include <mapmem.h>
 #include <asm/byteorder.h>
 #include <asm/io.h>
+#include <asm/mach-imx/hab.h>
+#ifdef CONFIG_AUTH_ARTIFACTS
+#include "../board/digi/common/trustfence.h"
+#endif
 
 static int do_source(struct cmd_tbl *cmdtp, int flag, int argc,
 		     char *const argv[])
@@ -47,6 +51,43 @@ static int do_source(struct cmd_tbl *cmdtp, int flag, int argc,
 		addr = hextoul(argv[1], NULL);
 		debug("*  source: cmdline image address = 0x%08lx\n", addr);
 	}
+
+#ifdef CONFIG_AUTH_DISCRETE_ARTIFACTS
+	ulong img_size;
+	const struct legacy_img_hdr *img_hdr = (const struct legacy_img_hdr *)addr;
+	if (img_hdr == NULL)
+		return CMD_RET_FAILURE;
+
+	img_size = image_get_image_size(img_hdr);
+	if (digi_auth_image(&addr, img_size) != 0) {
+		printf("Authenticate Image Fail, Please check\n");
+		return CMD_RET_FAILURE;
+	}
+#endif /* CONFIG_AUTH_DISCRETE_ARTIFACTS */
+
+#if defined(CONFIG_AHAB_BOOT) && defined(CONFIG_AUTH_FIT_ARTIFACT)
+	if (is_container_encrypted(addr, NULL)) {
+		/*
+		 * The payload is encrypted, so we need to decrypt to access
+		 * the script and then avoid skipping FIT image load.
+		 */
+		if (digi_auth_image(addr)) {
+			printf("Authenticate Image Fail, Please check\n");
+			return CMD_RET_FAILURE;
+		}
+		env_set("temp-fitimg-loaded", "no");
+	} else {
+		int img_offset = get_os_container_img_offset(addr);
+		if (img_offset < 0) {
+			printf
+			    ("Unable to get image offset in AHAB container\n");
+			return CMD_RET_FAILURE;
+		}
+		printf
+		    ("## Adjust script address for containerized FIT image\n");
+		addr += img_offset;
+	}
+#endif
 
 	printf ("## Executing script at %08lx\n", addr);
 	rcode = cmd_source_script(addr, fit_uname, confname);

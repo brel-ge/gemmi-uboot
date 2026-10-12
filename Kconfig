@@ -14,6 +14,68 @@ source "arch/Kconfig"
 
 menu "General setup"
 
+menu "Console settings"
+
+config CONSOLE_DISABLE
+	bool "Disable the console"
+	help
+	  Disables the console in U-Boot, and performs a silent boot into
+	  Linux.
+
+config CONSOLE_ENABLE_GPIO
+	bool "GPIO console enable support"
+	depends on CONSOLE_DISABLE
+	help
+	  Allow to enable the console with a GPIO.
+
+config CONSOLE_ENABLE_GPIO_NAME
+	string "Console enable GPIO name"
+	depends on CONSOLE_ENABLE_GPIO
+	default "GPIO2_5" if TARGET_CCIMX6SBC_COMMON
+	default "GPIO1_4" if TARGET_CCIMX6ULSTARTER
+	default "GPIO1_5" if TARGET_CCIMX6ULSBC
+	default "GPIO1_17" if TARGET_CCIMX8X_SBC_EXPRESS
+	default "GPIO4_21" if TARGET_CCIMX8X_SBC_PRO
+	default "GPIO1_10" if CC8M
+	default "GPIO3_7" if CC9
+	help
+	  Use any board GPIO line (by name) to enable the console.
+
+	  By default:
+	    GPIO2_5 on the ConnectCore 6 SBC
+	    GPIO1_4 on the ConnectCore 6UL Starter Board
+	    GPIO1_5 on the ConnectCore 6UL SBC
+	    GPIO1_17 on the ConnectCore 8X SBC Express
+	    GPIO4_21 on the ConnectCore 8X SBC Pro
+	    GPIO1_10 on the ConnectCore 8M DVK
+	    GPIO3_7 on the ConnectCore 9 DVK (USER1 button)
+
+config CONSOLE_ENABLE_GPIO_ACTIVE_LOW
+	bool "Console enable GPIO is active low"
+	depends on CONSOLE_ENABLE_GPIO
+	default y if CC9
+	help
+	  Enable this option when the GPIO to enable the console is active low.
+
+config CONSOLE_ENABLE_PASSPHRASE
+	bool "Passphrase console enable support"
+	depends on CONSOLE_DISABLE
+	help
+	  Allow to enable the console with a passphrase.
+
+config CONSOLE_ENABLE_PASSPHRASE_KEY
+	string "Console enable passphrase sha256 key"
+	depends on CONSOLE_ENABLE_PASSPHRASE
+	help
+	  This is the 64 digits hex number sha256 hash of the passphrase that
+	  enables the console on boot.
+
+	  To get the SHA256 hash use command:
+
+	    $ printf "passphrase" | sha256sum
+
+endmenu
+
 config BROKEN
 	bool
 	help

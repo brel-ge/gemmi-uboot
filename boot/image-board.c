@@ -24,6 +24,10 @@
 #include <asm/cache.h>
 #include <asm/global_data.h>
 
+#if IS_ENABLED(CONFIG_AUTH_DISCRETE_ARTIFACTS)
+#include "../board/digi/common/trustfence.h"
+#endif
+
 DECLARE_GLOBAL_DATA_PTR;
 
 /**
@@ -372,6 +376,14 @@ static int select_ramdisk(struct bootm_headers *images, const char *select, u8 a
 
 			printf("## Loading init Ramdisk from Legacy Image at %08lx ...\n",
 			       rd_addr);
+
+#if IS_ENABLED(CONFIG_AUTH_DISCRETE_ARTIFACTS)
+			ulong raw_image_size = image_get_image_size((struct legacy_img_hdr *)rd_addr);
+			if (digi_auth_image(&rd_addr, raw_image_size) != 0) {
+				printf("Ramdisk authentication failed\n");
+				return -EACCES;
+			}
+#endif
 
 			bootstage_mark(BOOTSTAGE_ID_CHECK_RAMDISK);
 			rd_hdr = image_get_ramdisk(rd_addr, arch,

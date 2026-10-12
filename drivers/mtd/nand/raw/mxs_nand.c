@@ -1104,24 +1104,6 @@ static int mxs_nand_ecc_write_oob(struct mtd_info *mtd, struct nand_chip *nand,
 	return 0;
 }
 
-/*
- * Claims all blocks are good.
- *
- * In principle, this function is *only* called when the NAND Flash MTD system
- * isn't allowed to keep an in-memory bad block table, so it is forced to ask
- * the driver for bad block information.
- *
- * In fact, we permit the NAND Flash MTD system to have an in-memory BBT, so
- * this function is *only* called when we take it away.
- *
- * Thus, this function is only called when we want *all* blocks to look good,
- * so it *always* return success.
- */
-static int mxs_nand_block_bad(struct mtd_info *mtd, loff_t ofs)
-{
-	return 0;
-}
-
 static int mxs_nand_set_geometry(struct mtd_info *mtd, struct bch_geometry *geo)
 {
 	struct nand_chip *chip = mtd_to_nand(mtd);
@@ -1635,6 +1617,9 @@ int mxs_nand_init_ctrl(struct mxs_nand_info *nand_info)
 
 	nand_set_controller_data(nand, nand_info);
 	nand->options |= NAND_NO_SUBPAGE_WRITE;
+#ifdef CONFIG_SKIP_NAND_BBT_SCAN
+	nand->options |= NAND_SKIP_BBTSCAN;
+#endif
 
 	if (nand_info->dev)
 		nand->flash_node = dev_ofnode(nand_info->dev);
@@ -1643,7 +1628,6 @@ int mxs_nand_init_ctrl(struct mxs_nand_info *nand_info)
 
 	nand->dev_ready		= mxs_nand_device_ready;
 	nand->select_chip	= mxs_nand_select_chip;
-	nand->block_bad		= mxs_nand_block_bad;
 
 	nand->read_byte		= mxs_nand_read_byte;
 
@@ -1671,6 +1655,17 @@ int mxs_nand_init_ctrl(struct mxs_nand_info *nand_info)
 	nand->ecc.mode		= NAND_ECC_HW;
 	nand->ecc.size		= nand_info->bch_geometry.ecc_chunkn_size;
 	nand->ecc.strength	= nand_info->bch_geometry.ecc_strength;
+
+	/*
+	 * Some NAND chips with on-die ECC report an ECC strength of 0 on the
+	 * ONFI parameters table. In that case, we want to set the ECC params
+	 * of 'nand_chip' structure with the calculated ECC that the driver
+	 * will work with.
+	 */
+	if (nand->ecc_strength_ds == 0 || nand->ecc_step_ds == 0) {
+		nand->ecc_strength_ds = nand->ecc.strength;
+		nand->ecc_step_ds = nand->ecc.size;
+	}
 
 	/* second phase scan */
 	err = nand_scan_tail(mtd);
@@ -1875,4 +1870,13 @@ uint32_t mxs_nand_mark_bit_offset(struct mtd_info *mtd)
 	struct bch_geometry *geo = &nand_info->bch_geometry;
 
 	return geo->block_mark_bit_offset;
+}
+
+void set_default_ecc_parameters(struct nand_chip *chip)
+{
+	/*
+	 * Intentionally do nothing. Just avoid the weak function from
+	 * setting default values. The mxs_nand driver will take care of
+	 * calculating appropriate ECC strength and setting the structures.
+	 */
 }

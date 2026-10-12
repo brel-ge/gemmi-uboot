@@ -16,8 +16,10 @@
 #include <linux/kernel.h>
 #include <linux/sizes.h>
 
+#if 0
 #if defined(CONFIG_AHAB_BOOT) && !defined(CONFIG_ANDROID_SUPPORT)
 #include <asm/mach-imx/ahab.h>
+#endif
 #endif
 
 #ifdef CONFIG_IMX_MATTER_TRUSTY
@@ -26,6 +28,7 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+#if 0
 #if defined(CONFIG_AHAB_BOOT) && !defined(CONFIG_ANDROID_SUPPORT)
 static int container_get_image_dst(ulong cntr, ulong *kernel, ulong *fdt)
 {
@@ -68,6 +71,7 @@ static int container_get_image_dst(ulong cntr, ulong *kernel, ulong *fdt)
 
 	return 0;
 }
+#endif
 #endif
 
 /*
@@ -127,11 +131,19 @@ static int booti_start(struct bootm_info *bmi)
 	}
 	unmap_sysmem((void *)ld);
 
+#if defined(CONFIG_AHAB_BOOT) && defined(CONFIG_AUTH_DISCRETE_ARTIFACTS)
+	extern int digi_auth_image(ulong *ddr_start, ulong raw_image_size);
+	if (digi_auth_image(&ld, 0 /* Not used for AHAB */ ) != 0) {
+		printf("Authenticate Image Fail, Please check\n");
+		return 1;
+	}
+#endif
+
 	ret = booti_setup(ld, &relocated_addr, &image_size, false);
 	if (ret)
 		return 1;
 
-#if defined(CONFIG_IMX_HAB) && !defined(CONFIG_AVB_SUPPORT)
+#if defined(CONFIG_IMX_HAB) && defined(CONFIG_AUTH_DISCRETE_ARTIFACTS) && !defined(CONFIG_AVB_SUPPORT)
 	extern int authenticate_image(
 		uint32_t ddr_start, uint32_t raw_image_size);
 	if (authenticate_image(ld, image_size) != 0) {
@@ -192,6 +204,7 @@ int do_booti(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	bmi.cmd_name = "booti";
 	/* do not set up argc and argv[] since nothing uses them */
 
+#if 0
 #if defined(CONFIG_AHAB_BOOT) && !defined(CONFIG_ANDROID_SUPPORT)
 	ulong cntr, kernel = 0, fdt = 0;
 	char fdtstr[32];
@@ -221,6 +234,7 @@ int do_booti(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	bmi.conf_fdt = (const char*)fdtstr;
 	sprintf(kernelstr, "0x%08lx\n", kernel);
 	sprintf(fdtstr, "0x%08lx\n", fdt);
+#endif
 #endif
 
 	if (booti_start(&bmi))

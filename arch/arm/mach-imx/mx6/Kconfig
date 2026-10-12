@@ -126,6 +126,23 @@ config CMD_BEE
 	help
 	  Set "Y" to enable the bee commands
 
+config TARGET_CCIMX6SBC_COMMON
+	bool
+	select CC6
+	select BOARD_EARLY_INIT_F
+	select BOARD_LATE_INIT
+	select DM
+	select DM_THERMAL
+	select IMX_THERMAL
+	select IMX_MODULE_FUSE
+	select OF_SYSTEM_SETUP
+	imply CMD_DM
+	select FSL_CAAM
+	select FSL_BLOB
+	select MISC
+	select ARCH_MISC_INIT
+	select RNG_SELF_TEST
+
 config TARGET_MX6SABREAUTO_COMMON
     bool
     select BOARD_LATE_INIT
@@ -190,6 +207,59 @@ config TARGET_ARISTAINETOS2CCSLB
 	select DM
 	imply CMD_SATA
 	imply CMD_DM
+
+config TARGET_CCIMX6DLSBC
+	bool "Digi ConnectCore 6 DualLite SBC"
+	select TARGET_CCIMX6SBC_COMMON
+	depends on MX6DL
+
+config TARGET_CCIMX6QSBC
+	bool "Digi ConnectCore 6 Quad/Dual SBC"
+	select TARGET_CCIMX6SBC_COMMON
+	depends on MX6Q
+
+config TARGET_CCIMX6QPSBC
+	bool "Digi ConnectCore 6 Plus SBC"
+	select TARGET_CCIMX6SBC_COMMON
+	depends on MX6QP
+
+config TARGET_CCIMX6ULSBC
+	bool "Digi ConnectCore 6UL SBC Pro"
+	depends on MX6UL
+	select CC6UL
+	select BOARD_EARLY_INIT_F
+	select BOARD_LATE_INIT
+	select DM
+	select DM_THERMAL
+	select SUPPORT_SPL
+	select MCA
+	select MTD_UBI_SKIP_REATTACH
+	select IMX_MODULE_FUSE
+	select OF_SYSTEM_SETUP
+	imply CMD_DM
+	select FSL_CAAM
+	select FSL_BLOB
+	select MISC
+	select ARCH_MISC_INIT
+
+config TARGET_CCIMX6ULSTARTER
+	bool "Digi ConnectCore 6UL SBC Express"
+	depends on MX6UL
+	select CC6UL
+	select BOARD_EARLY_INIT_F
+	select BOARD_LATE_INIT
+	select DM
+	select DM_THERMAL
+	select SUPPORT_SPL
+	select MCA
+	select MTD_UBI_SKIP_REATTACH
+	select IMX_MODULE_FUSE
+	select OF_SYSTEM_SETUP
+	imply CMD_DM
+	select FSL_CAAM
+	select FSL_BLOB
+	select MISC
+	select ARCH_MISC_INIT
 
 config TARGET_CM_FX6
 	bool "CM-FX6"
@@ -816,6 +886,9 @@ source "board/bsh/imx6ulz_smm_m2/Kconfig"
 source "board/bticino/mamoj/Kconfig"
 source "board/compulab/cm_fx6/Kconfig"
 source "board/comvetia/lxr2/Kconfig"
+source "board/digi/ccimx6sbc/Kconfig"
+source "board/digi/ccimx6ulsbc/Kconfig"
+source "board/digi/ccimx6ulstarter/Kconfig"
 source "board/dhelectronics/dh_imx6/Kconfig"
 source "board/embest/mx6boards/Kconfig"
 source "board/engicam/imx6q/Kconfig"

@@ -75,7 +75,7 @@ static int bootz_start(struct cmd_tbl *cmdtp, int flag, int argc,
 			      zi_end - zi_start))
 		return 1;
 
-#ifdef CONFIG_IMX_HAB
+#if defined(CONFIG_IMX_HAB) && defined(CONFIG_AUTH_DISCRETE_ARTIFACTS)
 	extern int authenticate_image(
 			uint32_t ddr_start, uint32_t raw_image_size);
 	if (authenticate_image(images->ep, zi_end - zi_start) != 0) {

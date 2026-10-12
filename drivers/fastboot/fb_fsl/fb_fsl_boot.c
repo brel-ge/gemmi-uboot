@@ -59,6 +59,10 @@
 /* max kernel image size, used for compressed kernel image */
 #define MAX_KERNEL_LEN (96 * 1024 * 1024)
 
+#ifdef CONFIG_ANDROID_LOAD_CONNECTCORE_FDT
+extern int connectcore_load_fdt(ulong fdt_addr, struct dt_table_header *dtt_header);
+#endif
+
 /* Boot metric variables */
 boot_metric metrics = {
   .bll_1 = 0,
@@ -1074,6 +1078,11 @@ int do_boota(struct cmd_tbl *cmdtp, int flag, int argc, char * const argv[]) {
 		goto fail;
 	}
 
+#ifdef CONFIG_ANDROID_LOAD_CONNECTCORE_FDT
+	if (connectcore_load_fdt(fdt_addr, dt_img))
+		goto fail;
+	fdt_size = fdt_totalsize((void *)(ulong)fdt_addr);
+#else
 	struct dt_table_entry *dt_entry;
 #ifdef CONFIG_INCLUDE_DTB_TO_VENDOR_BOOT
 	/* The first fdt contains the Id<-->Name mapping, parse expected
@@ -1103,6 +1112,7 @@ int do_boota(struct cmd_tbl *cmdtp, int flag, int argc, char * const argv[]) {
 	fdt_size = be32_to_cpu(dt_entry->dt_size);
 	memcpy((void *)(ulong)fdt_addr, (void *)((ulong)dt_img +
 			be32_to_cpu(dt_entry->dt_offset)), fdt_size);
+#endif
 
 
 	/*

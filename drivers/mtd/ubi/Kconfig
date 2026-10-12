@@ -120,5 +120,14 @@ config UBI_BLOCK
 	help
 	  Enable UBI block device support using blk_ops abstraction.
 
+config MTD_UBI_SKIP_REATTACH
+	bool "Skip deattaching, attaching and mounting alredy mounted volumes"
+	default n
+	help
+	  This option, when enabled, skips deattaching, attaching and mounting
+	  UBI volumes and filesystems that are already mounted. This is useful
+	  and saves boot time when multiple files are read from a UBIFS that
+	  has been already mounted.
+
 endif # MTD_UBI
 endmenu # "Enable UBI - Unsorted block images"

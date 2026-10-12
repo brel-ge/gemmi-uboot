@@ -331,8 +331,15 @@ int fuse_prog(u32 bank, u32 word, u32 val)
 	int ret;
 	bool lock = false;
 
+#ifdef DIGI_PLATFORM
+	if (word >= WORDS_PER_BANKS)
+		return -EINVAL;
+	if (!val)
+		return 0;
+#else
 	if (word >= WORDS_PER_BANKS || !val)
 		return -EINVAL;
+#endif
 
 	/* Lock 8ULP ECC fuse word, so second programming will return failure.
 	 * iMX9 OTP can protect ECC fuse, so not need it

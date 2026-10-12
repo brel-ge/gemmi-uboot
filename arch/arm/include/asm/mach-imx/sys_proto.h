@@ -96,6 +96,7 @@ struct bd_info;
 #define is_imx8mpdsc() (is_cpu_type(MXC_CPU_IMX8MPDSC))
 
 #define is_imx8qxp() (is_cpu_type(MXC_CPU_IMX8QXP))
+#define is_imx8dx() (is_cpu_type(MXC_CPU_IMX8DX))
 #define is_imx8dxl() (is_cpu_type(MXC_CPU_IMX8DXL))
 
 #define is_imx93() (is_cpu_type(MXC_CPU_IMX93) || is_cpu_type(MXC_CPU_IMX9331) || \
@@ -103,6 +104,7 @@ struct bd_info;
 	is_cpu_type(MXC_CPU_IMX9322) || is_cpu_type(MXC_CPU_IMX9321) || \
 	is_cpu_type(MXC_CPU_IMX9312) || is_cpu_type(MXC_CPU_IMX9311) || \
 	is_cpu_type(MXC_CPU_IMX9302) || is_cpu_type(MXC_CPU_IMX9301))
+#define is_imx9352() (is_cpu_type(MXC_CPU_IMX93))
 #define is_imx9351() (is_cpu_type(MXC_CPU_IMX9351))
 #define is_imx9332() (is_cpu_type(MXC_CPU_IMX9332))
 #define is_imx9331() (is_cpu_type(MXC_CPU_IMX9331))
@@ -325,6 +327,7 @@ u32 get_cpu_rev(void);
 u32 get_cpu_speed_grade_hz(void);
 u32 get_cpu_temp_grade(int *minc, int *maxc);
 const char *get_imx_type(u32 imxtype);
+const char *get_imx_family(u32 imxtype);
 u32 imx_ddr_size(void);
 void sdelay(unsigned long);
 void set_chipselect_size(int const);

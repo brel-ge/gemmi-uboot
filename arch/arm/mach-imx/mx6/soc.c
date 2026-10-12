@@ -615,8 +615,10 @@ int arch_cpu_init(void)
 	init_src();
 
 #if defined(CONFIG_MX6Q) || defined(CONFIG_MX6QDL) || defined(CONFIG_MX6QP)
-	if (is_mx6dqp())
+	if (is_mx6dqp()) {
 		noc_setup();
+		enable_ipu_clock();
+	}
 #endif
 
 	enable_ca7_smp();
@@ -702,6 +704,12 @@ int board_postclk_init(void)
 		return 0;
 
 	set_ldo_voltage(LDO_SOC, 1175);	/* Set VDDSOC to 1.175V */
+
+	/* Increase VPU and ARM voltage on MX6QP SOMs */
+	if (is_mx6dqp()) {
+		set_ldo_voltage(LDO_PU, 1175);	/* Set VDDVPU to 1.175V */
+		set_ldo_voltage(LDO_ARM, 1175);	/* Set VDDARM to 1.175V */
+	}
 
 	return 0;
 }
@@ -795,6 +803,31 @@ enum boot_device get_boot_device(void)
     return boot_dev;
 }
 
+/* This is in sync with 'enum boot_device' */
+const char *boot_device_name[] = {
+	"NOR Flash",
+	"OneNAND",
+	"PATA",
+	"SATA",
+	"I2C",
+	"SPI NOR",
+	"SD1",
+	"SD2",
+	"SD3",
+	"SD4",
+	"MMC1",
+	"MMC2",
+	"MMC3",
+	"MMC4",
+	"NAND",
+	"QSPI",
+	"Unknown",
+};
+const char * get_boot_device_name(void)
+{
+	return boot_device_name[get_boot_device()];
+}
+
 void set_wdog_reset(struct wdog_regs *wdog)
 {
 	u32 reg = readw(&wdog->wcr);
@@ -817,8 +850,19 @@ void set_wdog_reset(struct wdog_regs *wdog)
 	writew(reg, &wdog->wcr);
 }
 
+__weak void board_reset(void)
+{
+}
+
 void reset_misc(void)
 {
+	/*
+	 * Give a chance to every board to customize the reset. This is needed
+	 * because the reset_misc() hook is used already by the cpu code.
+	 * Therefore, now the board_reet() hook can be used by the board code.
+	 */
+	board_reset();
+
 #ifndef CONFIG_XPL_BUILD
 #if defined(CONFIG_VIDEO_MXS) && !defined(CONFIG_VIDEO)
 	lcdif_power_down();
@@ -962,6 +1006,8 @@ static void setup_serial_number(void)
 	env_set("serial#", serial_string);
 }
 
+extern int rng_workaround_copy_to_ocram(void);
+
 int arch_misc_init(void)
 {
 	if (IS_ENABLED(CONFIG_FSL_CAAM)) {
@@ -982,6 +1028,11 @@ int arch_misc_init(void)
 			printf("Failed to initialize dcp rng: %d\n", ret);
 	}
 
+#ifdef CONFIG_FSL_CAAM_RNG_ERRATA
+	if(rng_workaround_copy_to_ocram()){
+		printf("copy binary failed\n");
+	}
+#endif
 	setup_serial_number();
 	return 0;
 }

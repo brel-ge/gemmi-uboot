@@ -224,6 +224,10 @@ static bool mmc_env_is_redundant_in_both_boot_hwparts(struct mmc *mmc)
 	if (!IS_ENABLED(CONFIG_ENV_REDUNDANT))
 		return false;
 
+	/* SD cards have no eMMC boot hardware partitions */
+	if (IS_SD(mmc))
+		return false;
+
 	if (CONFIG_ENV_MMC_EMMC_HW_PARTITION != 1)
 		return false;
 

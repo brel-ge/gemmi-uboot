@@ -624,6 +624,9 @@ static int initr_check_spl_recovery(void)
 
 static int run_main_loop(void)
 {
+#if defined(CONFIG_CMD_SOURCE) && defined(CONFIG_AUTO_BOOTSCRIPT)
+	run_auto_bootscript();
+#endif
 #ifdef CONFIG_SANDBOX
 	sandbox_main_loop_init();
 #endif

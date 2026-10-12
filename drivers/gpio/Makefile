@@ -6,6 +6,7 @@
 ifndef CONFIG_XPL_BUILD
 obj-$(CONFIG_AXP_GPIO)		+= axp_gpio.o
 obj-$(CONFIG_DM_74X164)		+= 74x164_gpio.o
+obj-$(CONFIG_MCA_GPIO)		+= mca_gpio.o
 endif
 obj-$(CONFIG_$(PHASE_)DM_GPIO) += gpio-uclass.o
 

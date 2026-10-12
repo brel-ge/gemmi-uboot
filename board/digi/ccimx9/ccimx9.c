@@ -1,0 +1,494 @@
+/*
+ * Copyright 2022-2026 Digi International Inc
+ *
+ * SPDX-License-Identifier:	GPL-2.0+
+ */
+
+#include <asm/arch/imx-regs.h>
+#include <asm/arch/sys_proto.h>
+#include <asm/global_data.h>
+#include <asm/mach-imx/boot_mode.h>
+#include <command.h>
+#include <common.h>
+#include <display_options.h>
+#include <env_internal.h>
+#include <fdt_support.h>
+#include <mmc.h>
+#include <asm/system.h>
+#include <linux/delay.h>
+
+#include "../common/helper.h"
+#include "../common/hwid.h"
+#include "../common/mca.h"
+#if IS_ENABLED(CONFIG_SMARCID)
+#include "../common/smarcid.h"
+#endif
+#include "../common/trustfence.h"
+
+static struct digi_hwid my_hwid;
+#if IS_ENABLED(CONFIG_SMARCID)
+static struct digi_smarcid my_smarcid;
+#endif
+static u32 soc_rev;
+
+DECLARE_GLOBAL_DATA_PTR;
+
+enum env_location env_get_location(enum env_operation op, int prio)
+{
+	enum env_location env_loc = ENVL_UNKNOWN;
+
+	if (prio)
+		return env_loc;
+
+	if (CONFIG_IS_ENABLED(ENV_IS_IN_MMC))
+		env_loc = ENVL_MMC;
+	else if (CONFIG_IS_ENABLED(ENV_IS_NOWHERE))
+		env_loc = ENVL_NOWHERE;
+
+	return env_loc;
+}
+
+int mmc_get_bootdevindex(void)
+{
+	switch (get_boot_device()) {
+	case SD2_BOOT:
+		return 1;	/* index of USDHC2 (SD card) */
+	case MMC1_BOOT:
+		return 0;	/* index of USDHC1 (eMMC) */
+	default:
+		/* return default value otherwise */
+		return EMMC_BOOT_DEV;
+	}
+}
+
+#ifdef CONFIG_FSL_ESDHC_IMX
+bool board_has_emmc(void)
+{
+	return 1;
+}
+#endif /* CONFIG_FSL_ESDHC_IMX */
+
+void calculate_uboot_update_settings(struct blk_desc *mmc_dev,
+				     struct disk_partition *info)
+{
+	struct mmc *mmc = find_mmc_device(EMMC_BOOT_DEV);
+	int part = env_get_ulong("mmcbootpart", 10, EMMC_BOOT_PART);
+
+	/*
+	 * Use a different offset depending on the target device and partition:
+	 * - For eMMC BOOT1 and BOOT2
+	 *      Offset = 0
+	 * - For eMMC User Data area.
+	 *      Offset = EMMC_BOOT_PART_OFFSET
+	 */
+	if (is_imx9() && (part == 1 || part == 2)) {
+		/* eMMC BOOT1 or BOOT2 partitions */
+		info->start = 0;
+	} else {
+		info->start = EMMC_BOOT_PART_OFFSET / mmc_dev->blksz;
+	}
+
+	/* Boot partition size - Start of boot image */
+	info->size = (mmc->capacity_boot / mmc_dev->blksz) - info->start;
+}
+
+bool board_has_eth1(void)
+{
+	return true;
+}
+
+#if IS_ENABLED(CONFIG_MCA)
+static bool board_has_mca(void)
+{
+#if IS_ENABLED(CONFIG_SMARCID)
+	return my_smarcid.mca;
+#else
+	return my_hwid.mca;
+#endif
+}
+#endif
+
+bool board_has_wireless(void)
+{
+	return my_hwid.wifi;
+}
+
+bool board_has_bluetooth(void)
+{
+	return my_hwid.bt;
+}
+
+bool board_has_npu(void)
+{
+	return is_imx9321() || is_imx9322() || is_imx9351() || is_imx9352();
+}
+
+static const char *get_cpu_type_str(void)
+{
+	u32 cpu_type = get_cpu_type();
+
+	switch (cpu_type) {
+	case MXC_CPU_IMX93:
+		return "imx9352";
+	case MXC_CPU_IMX9351:
+		return "imx9351";
+	case MXC_CPU_IMX9332:
+		return "imx9332";
+	case MXC_CPU_IMX9331:
+		return "imx9331";
+	case MXC_CPU_IMX9322:
+		return "imx9322";
+	case MXC_CPU_IMX9321:
+		return "imx9321";
+	case MXC_CPU_IMX9312:
+		return "imx9312";
+	case MXC_CPU_IMX9311:
+		return "imx9311";
+	case MXC_CPU_IMX9302:
+		return "imx9302";
+	case MXC_CPU_IMX9301:
+		return "imx9301";
+	case MXC_CPU_IMX91:
+		return "imx9131";
+	case MXC_CPU_IMX9111:
+		return "imx9111";
+	case MXC_CPU_IMX9101:
+		return "imx9101";
+	default:
+		return "";
+	}
+}
+
+#if IS_ENABLED(CONFIG_MCA)
+static void ccimx9_mca_somver_update(void)
+{
+	unsigned char hv = 0;
+
+#if IS_ENABLED(CONFIG_SMARCID)
+	hv = my_smarcid.hv;
+#else
+	hv = my_hwid.hv;
+#endif
+
+	mca_somver_update(hv);
+}
+#endif /* CONFIG_MCA */
+
+int ccimx9_init(void)
+{
+	int ret = 0;
+
+	if (hwid_read(&my_hwid)) {
+		printf("Cannot read HWID\n");
+		ret = -1;
+	}
+
+#if IS_ENABLED(CONFIG_SMARCID)
+	if (smarcid_read(&my_smarcid)) {
+		printf("Cannot read SMARCID\n");
+		ret = -1;
+	}
+#endif
+
+#if IS_ENABLED(CONFIG_MCA)
+	if (board_has_mca()) {
+		mca_init();
+		ccimx9_mca_somver_update();
+#if IS_ENABLED(CONFIG_MCA_TAMPER)
+		mca_tamper_check_events();
+#endif
+	}
+#endif
+	soc_rev = soc_rev();
+
+	return ret;
+}
+
+void som_loaded_environment(void)
+{
+	/* Update local HWID and SMARCID as soon as the environment is available */
+	if (hwid_read(&my_hwid)) {
+		printf("Cannot read HWID\n");
+	}
+
+#if IS_ENABLED(CONFIG_SMARCID)
+	if (smarcid_read(&my_smarcid)) {
+		printf("Cannot read SMARCID\n");
+	}
+#endif
+
+#if IS_ENABLED(CONFIG_MCA)
+	if (board_has_mca())
+		ccimx9_mca_somver_update();
+#endif
+}
+
+void som_default_environment(void)
+{
+#ifdef CONFIG_CMD_MMC
+	char cmd[80];
+#endif
+	char var[200];
+
+#ifdef CONFIG_CMD_MMC
+	/* Set $mmcbootdev to MMC boot device index */
+	sprintf(cmd, "setenv -f mmcbootdev %x", mmc_get_bootdevindex());
+	run_command(cmd, 0);
+#endif
+
+	/* Set module_variant variable */
+	sprintf(var, "0x%02x", my_hwid.variant);
+	env_set("module_variant", var);
+
+	/* Set soc_rev variable */
+	sprintf(var, "0x%02x", soc_rev);
+	env_set("soc_rev", var);
+
+	/* Set FUSE HWID local vars */
+	board_hwid_fuse_set_local_vars();
+
+	/* Set module_ram variable */
+	if (my_hwid.ram) {
+		u64 ram = hwid_get_ramsize(&my_hwid);
+
+		if (ram >= SZ_1G) {
+			ram /= SZ_1G;
+			snprintf(var, sizeof(var), "%lluGB", ram);
+		} else {
+			ram /= SZ_1M;
+			snprintf(var, sizeof(var), "%lluMB", ram);
+		}
+		env_set("module_ram", var);
+	}
+
+	/* Get MAC address from HWID unless indicated otherwise */
+	if (env_get_yesno("use_fused_macs"))
+		hwid_get_macs(&my_hwid);
+
+	/* Verify MAC addresses */
+	verify_mac_address("ethaddr", DEFAULT_MAC_ETHADDR);
+
+	if (board_has_eth1())
+		verify_mac_address("eth1addr", DEFAULT_MAC_ETHADDR1);
+
+	if (board_has_wireless())
+		verify_mac_address("wlanaddr", DEFAULT_MAC_WLANADDR);
+
+	if (board_has_bluetooth())
+		verify_mac_address("btaddr", DEFAULT_MAC_BTADDR);
+
+	/* Get serial number from HWID */
+	hwid_get_serial_number(&my_hwid);
+
+	/* Set 'som_overlays' variable */
+	var[0] = 0;
+	if (board_has_wireless())
+		strlcat(var, "ccimx93_wifi.dtbo,", sizeof(var));
+	if (board_has_bluetooth())
+		strlcat(var, "ccimx93_bt.dtbo,", sizeof(var));
+	if (board_has_npu())
+		strlcat(var, "ccimx93_npu.dtbo,", sizeof(var));
+	/* Remove the trailing comma */
+	if (var[0])
+		var[strlen(var) - 1] = 0;
+	env_set("som_overlays", var);
+
+	env_set("cpu_type", get_cpu_type_str());
+
+#if IS_ENABLED(CONFIG_SMARCID)
+	/* Get SMARCID-related variables */
+	smarcid_get_variant(&my_smarcid);
+	smarcid_get_serial_number(&my_smarcid);
+#endif
+}
+
+void board_hwid_update(void)
+{
+	/* Update HWID-related variables in MCA and environment */
+	if (hwid_read(&my_hwid)) {
+		printf("Cannot read HWID\n");
+		return;
+	}
+
+#if IS_ENABLED(CONFIG_MCA)
+	if (board_has_mca())
+		ccimx9_mca_somver_update();
+#endif
+
+	som_default_environment();
+}
+
+#if IS_ENABLED(CONFIG_SMARCID)
+void board_smarcid_update(void)
+{
+	/* Update SMARCID-related variables in environment */
+	if (smarcid_read(&my_smarcid)) {
+		printf("Cannot read SMARCID\n");
+		return;
+	}
+
+#if IS_ENABLED(CONFIG_MCA)
+	if (board_has_mca())
+		ccimx9_mca_somver_update();
+#endif
+
+	som_default_environment();
+}
+#endif
+
+int ccimx9_late_init(void)
+{
+#ifdef CONFIG_CONSOLE_ENABLE_PASSPHRASE
+	gd->flags &= ~GD_FLG_DISABLE_CONSOLE_INPUT;
+	if (!console_enable_passphrase())
+		gd->flags &= ~(GD_FLG_DISABLE_CONSOLE | GD_FLG_SILENT);
+	else
+		gd->flags |= GD_FLG_DISABLE_CONSOLE_INPUT;
+#endif
+
+	return 0;
+}
+
+void fdt_fixup_ccimx9(void *fdt)
+{
+	fdt_fixup_fuse_hwid(fdt);
+	fdt_fixup_hwid(fdt, &my_hwid);
+#if IS_ENABLED(CONFIG_SMARCID)
+	fdt_fixup_fuse_smarcid(fdt);
+	fdt_fixup_smarcid(fdt, &my_smarcid);
+#endif
+
+	if (soc_rev) {
+		char hex_rev[5]; // 4 hex chars + null byte
+		snprintf(hex_rev, sizeof(hex_rev), "0x%02x", soc_rev);
+		do_fixup_by_path(fdt, "/soc", "revision", hex_rev,
+				 sizeof(hex_rev), 1);
+	}
+
+	if (board_has_wireless()) {
+		/* Wireless MACs */
+		fdt_fixup_mac(fdt, "wlanaddr", "/wireless", "mac-address");
+		fdt_fixup_mac(fdt, "wlan1addr", "/wireless", "mac-address1");
+		fdt_fixup_mac(fdt, "wlan2addr", "/wireless", "mac-address2");
+		fdt_fixup_mac(fdt, "wlan3addr", "/wireless", "mac-address3");
+
+		/* Regulatory domain */
+		fdt_fixup_regulatory(fdt);
+	}
+
+	if (board_has_bluetooth())
+		fdt_fixup_mac(fdt, "btaddr", "/bluetooth", "mac-address");
+
+#ifdef CONFIG_HAS_TRUSTFENCE
+	fdt_fixup_trustfence(fdt);
+#endif
+	fdt_fixup_uboot_info(fdt);
+	fdt_fixup_install_code(fdt);
+}
+
+void print_som_info(void)
+{
+	if (my_hwid.variant) {
+		printf("%s SOM variant 0x%02X: ", CONFIG_SOM_DESCRIPTION,
+		       my_hwid.variant);
+		print_size(gd->ram_size, is_imx95() ? " LPDDR5" : " LPDDR4");
+		if (my_hwid.wifi)
+			printf(", Wi-Fi");
+		if (my_hwid.bt)
+			printf(", Bluetooth");
+		if (my_hwid.mca)
+			printf(", MCA");
+		if (my_hwid.crypto)
+			printf(", Crypto-auth");
+		printf("\n");
+	}
+
+#if IS_ENABLED(CONFIG_SMARCID)
+	if (is_smarc(&my_smarcid)) {
+		printf("%s SMARC variant 0x%02X: ", CONFIG_SOM_DESCRIPTION,
+		       my_smarcid.variant);
+		if (my_smarcid.eth1 && my_smarcid.eth2)
+			printf("Dual Ethernet");
+		else if (my_smarcid.eth1 || my_smarcid.eth2)
+			printf("Single Ethernet");
+		else
+			printf("No Ethernet");
+		if (my_smarcid.mca)
+			printf(", MCA");
+		if (my_smarcid.hub)
+			printf(", USB Hub");
+		if (my_smarcid.tpm)
+			printf(", TPM");
+		if (my_smarcid.rtc)
+			printf(", RTC");
+		if (my_smarcid.temp)
+			printf(", Temp sensor");
+		if (my_smarcid.eeprom)
+			printf(", EEPROM");
+		printf("\n");
+	}
+#endif
+}
+
+int print_bootinfo(void)
+{
+	enum boot_device bt_dev = get_boot_device();
+
+	puts("Boot:  ");
+	switch (bt_dev) {
+	case SD1_BOOT:
+		puts("SD0\n");
+		break;
+	case SD2_BOOT:
+		puts("SD1\n");
+		break;
+	case SD3_BOOT:
+		puts("SD2\n");
+		break;
+	case MMC1_BOOT:
+		puts("MMC0\n");
+		break;
+	case MMC2_BOOT:
+		puts("MMC1\n");
+		break;
+	case MMC3_BOOT:
+		puts("MMC2\n");
+		break;
+	case NAND_BOOT:
+		puts("NAND\n");
+		break;
+	case USB_BOOT:
+		puts("USB\n");
+		break;
+	default:
+		printf("Unknown device %u\n", bt_dev);
+		break;
+	}
+
+	return 0;
+}
+
+#ifdef CONFIG_TARGET_CCIMX95_DVK
+/*
+ * Use the reset_misc hook to customize the reset implementation. This function
+ * is invoked before the standard reset_cpu().
+ * We want to perform the reset through the MCA which may, depending
+ * on the configuration, assert the POR_B line or perform a power cycle of the
+ * system.
+ */
+void reset_misc(void)
+{
+#if IS_ENABLED(CONFIG_MCA)
+	if (board_has_mca()) {
+		mca_reset();
+		mdelay(1);
+	}
+#endif
+
+	/* fall back to regular reset if MCA reset doesn't work */
+#ifdef CONFIG_PSCI_RESET
+	psci_system_reset();
+	mdelay(1);
+#endif
+}
+#endif

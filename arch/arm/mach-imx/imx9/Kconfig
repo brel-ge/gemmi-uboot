@@ -101,6 +101,21 @@ choice
 	prompt  "NXP i.MX9 board select"
 	optional
 
+config TARGET_CCIMX91_DVK
+	bool "Digi ConnectCore 91 Development Kit"
+	select IMX91
+	select CC9
+
+config TARGET_CCIMX93_DVK
+	bool "Digi ConnectCore 93 Development Kit"
+	select IMX93
+	select CC9
+
+config TARGET_CCIMX95_DVK
+	bool "Digi ConnectCore 95 Development Kit"
+	select IMX95
+	select CC9
+
 config TARGET_IMX91_11X11_EVK
 	bool "imx91_11x11_evk"
 	select OF_BOARD_FIXUP
@@ -333,6 +348,9 @@ config TARGET_IMX943_ORANGEBOX
 
 endchoice
 
+source "board/digi/ccimx91-dvk/Kconfig"
+source "board/digi/ccimx93-dvk/Kconfig"
+source "board/digi/ccimx95-dvk/Kconfig"
 source "board/nxp/imx91_evk/Kconfig"
 source "board/nxp/imx91_frdm_imx91s/Kconfig"
 source "board/nxp/imx91_qsb/Kconfig"

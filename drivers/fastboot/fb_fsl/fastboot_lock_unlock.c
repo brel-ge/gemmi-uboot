@@ -3,6 +3,7 @@
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  */
 #include <config.h>
+#include <env.h>
 #include <mapmem.h>
 #include <linux/types.h>
 #include <linux/delay.h>
@@ -91,7 +92,7 @@ bool valid_tos() {
 	 */
 	bool valid = false;
 #ifdef CONFIG_IMX_HAB
-	if (is_hab_enabled()) {
+	if (imx_hab_is_enabled()) {
 		valid = authenticate_image(TRUSTY_OS_ENTRY, TRUSTY_OS_PADDED_SZ);
 	} else
 #endif
@@ -380,6 +381,10 @@ FbLockState fastboot_get_lock_stat(void) {
 	FbLockState ret;
 	/* uboot used by uuu will boot from USB, always return UNLOCK state */
 	if (is_boot_from_usb())
+		return g_lockstat;
+
+	/* Assume UNLOCK state, also if "skip-fblock-check" env var is true */
+	if (env_get_yesno("skip-fblock-check") == 1)
 		return g_lockstat;
 
 	bdata = (unsigned char *)memalign(ARCH_DMA_MINALIGN, SECTOR_SIZE);

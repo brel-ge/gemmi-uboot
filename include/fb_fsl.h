@@ -57,7 +57,7 @@
 #define FASTBOOT_PARTITION_BOOT_A "boot_a"
 #define FASTBOOT_PARTITION_RECOVERY "recovery"
 #define FASTBOOT_PARTITION_SYSTEM_A "system_a"
-#define FASTBOOT_PARTITION_BOOTLOADER "bootloader0"
+#define FASTBOOT_PARTITION_BOOTLOADER "bootloader"
 #define FASTBOOT_PARTITION_DATA "userdata"
 #define FASTBOOT_PARTITION_BOOT_B "boot_b"
 #define FASTBOOT_PARTITION_SYSTEM_B "system_b"
@@ -77,6 +77,8 @@
 #define FASTBOOT_PARTITION_RECOVERY "recovery"
 #define FASTBOOT_PARTITION_SYSTEM "system"
 #define FASTBOOT_PARTITION_CACHE "cache"
+#define FASTBOOT_PARTITION_OEM "oem"
+#define FASTBOOT_PARTITION_VENDOR "vendor"
 #define FASTBOOT_PARTITION_DEVICE "device"
 #define FASTBOOT_PARTITION_BOOTLOADER "bootloader"
 #define FASTBOOT_PARTITION_DATA "userdata"
@@ -84,6 +86,7 @@
 #define FASTBOOT_PARTITION_MISC "misc"
 #define FASTBOOT_PARTITION_FBMISC "fbmisc"
 #endif
+#define FASTBOOT_PARTITION_BOOTLOADER_REDUNDANT "bootloader_redundant"
 
 #ifdef CONFIG_IMX_TRUSTY_OS
 #ifndef CONFIG_AVB_ATX

@@ -725,6 +725,7 @@ dtb-y += \
 	imx6dl-aristainetos2c_7.dtb \
 	imx6dl-aristainetos2c_cslb_7.dtb \
 	imx6dl-brppt2.dtb \
+	imx6dl-ccimx6sbc.dtb \
 	imx6dl-cubox-i.dtb \
 	imx6dl-cubox-i-emmc-som-v15.dtb \
 	imx6dl-cubox-i-som-v15.dtb \
@@ -768,6 +769,7 @@ ifneq ($(CONFIG_MX6Q)$(CONFIG_MX6QDL)$(CONFIG_MX6QP),)
 dtb-y += \
 	imx6q-apalis-eval.dtb \
 	imx6q-bosch-acc.dtb \
+	imx6q-ccimx6sbc.dtb \
 	imx6q-cm-fx6.dtb \
 	imx6q-cubox-i.dtb \
 	imx6q-cubox-i-emmc-som-v15.dtb \
@@ -812,6 +814,7 @@ dtb-y += \
 	imx6q-sabresd.dtb \
 	imx6q-tbs2910.dtb \
 	imx6q-wandboard-revd1.dtb \
+	imx6qp-ccimx6qpsbc.dtb \
 	imx6qp-sabreauto.dtb \
 	imx6qp-sabreauto-ecspi.dtb \
 	imx6qp-sabreauto-gpmi-weim.dtb \
@@ -831,6 +834,8 @@ dtb-$(CONFIG_MX6SX) += \
 	imx6sx-softing-vining-2000.dtb
 
 dtb-$(CONFIG_MX6UL) += \
+	imx6ul-ccimx6ulsbc.dtb \
+	imx6ul-ccimx6ulstarter.dtb \
 	imx6ul-geam.dtb \
 	imx6ul-isiot-emmc.dtb \
 	imx6ul-isiot-nand.dtb \
@@ -898,6 +903,8 @@ dtb-$(CONFIG_ARCH_MX7ULP) += imx7ulp-com.dtb \
 dtb-$(CONFIG_ARCH_HIGHBANK) += highbank.dtb
 
 dtb-$(CONFIG_ARCH_IMX8) += \
+	ccimx8x-sbc-express.dtb \
+	ccimx8x-sbc-pro.dtb \
 	fsl-imx8qm-apalis.dtb \
 	fsl-imx8qm-mek.dtb \
 	fsl-imx8qm-ddr4-val.dtb \
@@ -921,6 +928,8 @@ dtb-$(CONFIG_ARCH_IMX8) += \
 	imx8-capricorn-cxg3.dtb \
 
 dtb-$(CONFIG_ARCH_IMX8M) += \
+	ccimx8mm-dvk.dtb \
+	ccimx8mn-dvk.dtb \
 	imx8mm-data-modul-edm-sbc.dtb \
 	imx8mm-ddr4-ab2.dtb \
 	imx8mm-ab2.dtb \
@@ -950,6 +959,7 @@ dtb-$(CONFIG_ARCH_IMX8M) += \
 	imx8mq-librem5-r4.dtb
 
 dtb-$(CONFIG_ARCH_IMX9) += \
+	ccimx93-dvk.dtb \
 	imx93-11x11-frdm.dtb \
 	imx95-15x15-frdm.dtb \
 	imx95-19x19-frdm-pro.dtb \

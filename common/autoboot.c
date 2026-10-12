@@ -431,6 +431,9 @@ static int abortboot(int bootdelay)
 {
 	int abort = 0;
 
+	if (gd->flags & GD_FLG_DISABLE_CONSOLE_INPUT)
+		return 0;
+
 	if (bootdelay >= 0) {
 		if (autoboot_keyed())
 			abort = abortboot_key_sequence(bootdelay);
@@ -465,8 +468,10 @@ const char *bootdelay_process(void)
 {
 	char *s;
 	int bootdelay;
+	unsigned long bootlimit = env_get_ulong("bootlimit", 10, 0);
 
-	bootcount_inc();
+	if (bootlimit)
+		bootcount_inc();
 
 	s = env_get("bootdelay");
 	bootdelay = s ? (int)simple_strtol(s, NULL, 10) : CONFIG_BOOTDELAY;
@@ -488,7 +493,7 @@ const char *bootdelay_process(void)
 				 mfgtools\n", 0);
 	} else if (is_boot_from_usb()) {
 		printf("Boot from USB for uuu\n");
-		env_set("bootcmd", "fastboot 0");
+		env_set("bootcmd_mfg", "fastboot 0");
 	} else {
 		printf("Normal Boot\n");
 	}
@@ -505,7 +510,7 @@ const char *bootdelay_process(void)
 		s = env_get("failbootcmd");
 	} else
 #endif /* CONFIG_POST */
-	if (bootcount_error())
+	if (bootlimit && bootcount_error())
 		s = env_get("altbootcmd");
 	else
 		s = env_get("bootcmd");
@@ -516,6 +521,16 @@ const char *bootdelay_process(void)
 		printf("Run bootcmd_mfg: %s\n", s);
 	}
 #endif
+
+	/* Check if boot recovery is enabled */
+	if (env_get_yesno("boot_recovery") == 1) {
+		s = env_get("recoverycmd");
+		printf("\n"
+		       "******************************************\n"
+		       "* Warning: Booting into recovery mode... *\n"
+		       "******************************************\n"
+		       "\n");
+	}
 
 	if (IS_ENABLED(CONFIG_OF_CONTROL))
 		process_fdt_options();

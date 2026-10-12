@@ -382,4 +382,7 @@ void env_import_fdt(void);
 static inline void env_import_fdt(void) {}
 #endif
 
+long long env_get_offset(long long default_offset);
+long long env_get_offset_redund(long long default_offset);
+
 #endif

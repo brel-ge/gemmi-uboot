@@ -354,6 +354,11 @@ int board_early_init_r(void);
  */
 int arch_initr_trap(void);
 
+/* board/digi/common */
+#if defined(CONFIG_CMD_SOURCE) && defined(CONFIG_AUTO_BOOTSCRIPT)
+void run_auto_bootscript(void);
+#endif
+
 /**
  * init_addr_map()
  *

@@ -503,7 +503,7 @@ static void display_life_cycle(u32 lc)
 }
 #endif
 
-static int confirm_close(void)
+int confirm_close(void)
 {
 	puts("Warning: Please ensure your sample lifecycle is OEM Open state, "
 	     "OEM SRK hash has been fused, \n"

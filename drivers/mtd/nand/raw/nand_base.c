@@ -1017,7 +1017,7 @@ static int nand_setup_data_interface(struct nand_chip *chip, int chipnr)
 	 * before changing timings on the controller side.
 	 */
 	ret = nand_onfi_set_timings(mtd, chip);
-	if (ret)
+	if (ret && ret != -ENOTSUPP)
 		goto err;
 
 	ret = chip->setup_data_interface(mtd, chipnr, chip->data_interface);
@@ -4010,7 +4010,7 @@ static int nand_flash_detect_jedec(struct mtd_info *mtd, struct nand_chip *chip)
 	}
 
 	if (i == 3) {
-		pr_err("Could not find valid JEDEC parameter page; aborting\n");
+		pr_info("Could not find valid JEDEC parameter page; aborting\n");
 		return 0;
 	}
 
@@ -4278,6 +4278,15 @@ static const struct nand_manufacturer *nand_get_manufacturer_desc(u8 id)
 }
 
 /*
+ * Sets default ECC parameters when the NAND doesn't report preferred ones.
+ */
+__weak void set_default_ecc_parameters(struct nand_chip *chip)
+{
+	chip->ecc_strength_ds = 8;
+	chip->ecc_step_ds = 512;
+}
+
+/*
  * Get the flash and manufacturer id and lookup if the type is supported.
  */
 int nand_detect(struct nand_chip *chip, int *maf_id,
@@ -4388,6 +4397,13 @@ int nand_detect(struct nand_chip *chip, int *maf_id,
 	chip->options |= type->options;
 
 ident_done:
+	/*
+	 * Some NANDs report 0 bits of ECC strength because they
+	 * can work with any number of ECC bits. Set default ECC parameters
+	 * on such cases, because drivers may not accept a value of 0.
+	 */
+	if (chip->ecc_strength_ds == 0 || chip->ecc_step_ds == 0)
+		set_default_ecc_parameters(chip);
 
 	if (chip->options & NAND_BUSWIDTH_AUTO) {
 		WARN_ON(chip->options & NAND_BUSWIDTH_16);

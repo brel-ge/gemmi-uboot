@@ -81,7 +81,12 @@ typedef struct environment_s {
 	unsigned char	flags;		/* active/obsolete flags ENVF_REDUND_ */
 #endif
 	unsigned char	data[ENV_SIZE]; /* Environment data		*/
-} env_t;
+} env_t
+#ifdef CONFIG_ENV_ENCRYPT
+/* Make sure the env is aligned to block size. */
+__attribute__((aligned(16)))
+#endif
+;
 
 #ifdef ENV_IS_EMBEDDED
 extern env_t embedded_environment;
