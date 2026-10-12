@@ -42,6 +42,7 @@
 #endif
 #include <asm/mach-imx/boot_mode.h>
 #include <asm/mach-imx/iomux-v3.h>
+#include <linux/delay.h>
 #include "../ccimx6/ccimx6.h"
 #include "../common/carrier_board.h"
 #include "../common/helper.h"
@@ -93,6 +94,80 @@ static iomux_v3_cfg_t const pcie_pwr_pads[] = {
 	MX6_PAD_NANDF_RB0__GPIO6_IO10 | MUX_PAD_CTRL(NO_PAD_CTRL),
 };
 
+#ifdef CONFIG_CCIMX6SBC_GEMMI
+static iomux_v3_cfg_t const gemmi_pads[] = {
+	/* On Hold */
+	MX6_PAD_NANDF_CS3__GPIO6_IO16 | MUX_PAD_CTRL(NO_PAD_CTRL),
+	/* i2c3 scl */
+	MX6_PAD_GPIO_3__GPIO1_IO03 | MUX_PAD_CTRL(NO_PAD_CTRL),
+	/* ecp5 programn */
+	MX6_PAD_GPIO_7__GPIO1_IO07 | MUX_PAD_CTRL(NO_PAD_CTRL),
+	/* ecp5 done */
+	MX6_PAD_GPIO_8__GPIO1_IO08 | MUX_PAD_CTRL(NO_PAD_CTRL),
+	/* ecp5 init */
+	MX6_PAD_KEY_COL2__GPIO4_IO10 | MUX_PAD_CTRL(NO_PAD_CTRL),
+	/* P on led */
+	MX6_PAD_KEY_ROW2__GPIO4_IO11 | MUX_PAD_CTRL(NO_PAD_CTRL),
+};
+
+static void setup_board_gemmi(void)
+{
+	int i;
+
+	imx_iomux_v3_setup_multiple_pads(gemmi_pads, ARRAY_SIZE(gemmi_pads));
+
+	/*
+	 * Set OnHold pin to 1
+	 */
+	gpio_request(ONHOLD_GPIO, "ONHOLD_GPIO");
+	gpio_direction_output(ONHOLD_GPIO, 1);
+
+	/*
+	 * Init sequence for ecp5 (CamBridge). This is necessary because the
+	 * programn pin has an undefined voltage (not high and not low) on boot.
+	 * This sequence makes the ecp5 boot correctly.
+	 * 3451_gemmi/808_gemmi_app#435
+	 */
+	gpio_request(ECP5_PROGRAMN, "PROGRAMN");
+	gpio_request(ECP5_INITN, "INITN");
+
+	gpio_direction_output(ECP5_INITN, 0);
+	gpio_direction_output(ECP5_PROGRAMN, 1);
+	mdelay(20);
+	gpio_direction_input(ECP5_INITN);
+	gpio_direction_output(ECP5_PROGRAMN, 0);
+	udelay(1);
+	gpio_direction_output(ECP5_PROGRAMN, 1);
+
+	/*
+	 * Toggle 9 times on I2C3 scl line so that all components are ready for
+	 * communication.
+	 * 3451_gemmi/u-boot#4
+	 */
+	gpio_request(I2C3_SCL_GPIO, "I2C3_SCL_GPIO");
+	for (i = 0; i < 9; i++) {
+		gpio_direction_output(I2C3_SCL_GPIO, 0);
+		udelay(5);
+		gpio_direction_output(I2C3_SCL_GPIO, 1);
+		udelay(5);
+	}
+
+	/*
+	 * Enable the power On LED (green led on front)
+	 * 3451_gemmi/u-boot#2
+	 */
+	gpio_request(P_ON_LED, "P_ON_LED");
+	gpio_direction_output(P_ON_LED, 1);
+
+	/*
+	 * The LDO_PU (VPU/GPU) target voltage of 1.175V that matches the value
+	 * Linux sets (3451_gemmi/belp#5) is already programmed for MX6DQP in
+	 * board_postclk_init(), and the IPU clocks are enabled in
+	 * arch_cpu_init().
+	 */
+}
+#endif /* CONFIG_CCIMX6SBC_GEMMI */
+
 #ifdef CONFIG_SYS_I2C_MXC
 int setup_pmic_voltages_carrierboard(void)
 {
@@ -134,6 +209,17 @@ int setup_pmic_voltages_carrierboard(void)
 		printf("Could not configure GPIO11\n");
 	if (pmic_write_bitfield(DA9063_GPIO_MODE8_15_ADDR, 0x1, 7, 0x1))
 		printf("Could not set GPIO11 high\n");
+
+#ifdef CONFIG_CCIMX6SBC_GEMMI
+	/*
+	 * Set GPIO 14 (Blue led on power button to 100%)
+	 * i2c mw 0x58 0x1c 0xf0 1; i2c mw 0x58 0xc7 0x5f 1;
+	 * 3451_gemmi/808_gemmi_app#181
+	 */
+	if (pmic_write_reg(DA9063_GPIO14_15_ADDR, 0xf0) ||
+	    pmic_write_reg(DA9063_GPO14LED, 0x5f))
+		printf("Could not enable blue power button LED\n");
+#endif
 
 	/* PWR_EN on the ccimx6sbc enables the +5V suppy and comes
 	 * from PMIC_GPIO7. Set this GPIO high to enable +5V supply.
@@ -303,13 +389,23 @@ int board_early_init_f(void)
 
 int board_init(void)
 {
+#ifdef CONFIG_CCIMX6SBC_GEMMI
+	setup_board_gemmi();
+#endif
+
 	/* address of boot parameters */
 	gd->bd->bi_boot_params = PHYS_SDRAM + 0x100;
 
 	ccimx6_init();
 
-	board_version = get_carrierboard_version();
-	board_id = get_carrierboard_id();
+	/*
+	 * GEMMI is not a Digi SBC: leave the carrier board version/ID
+	 * undefined so no SBC-specific audio/PCIe setup is done.
+	 */
+	if (!IS_ENABLED(CONFIG_CCIMX6SBC_GEMMI)) {
+		board_version = get_carrierboard_version();
+		board_id = get_carrierboard_id();
+	}
 
 #ifdef CONFIG_SATA
 	setup_iomux_sata();
@@ -358,6 +454,13 @@ void platform_loaded_environment(void)
 void platform_default_environment(void)
 {
 	char cmd[80];
+
+	/*
+	 * GEMMI does not use the dynamic Digi variables (partition tables,
+	 * module/board info): its environment is set up by the installer.
+	 */
+	if (IS_ENABLED(CONFIG_CCIMX6SBC_GEMMI))
+		return;
 
 	som_default_environment();
 

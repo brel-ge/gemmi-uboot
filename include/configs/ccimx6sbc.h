@@ -29,6 +29,17 @@
 
 #define CONSOLE_DEV			"ttymxc3"
 
+#ifdef CONFIG_CCIMX6SBC_GEMMI
+#include <asm/mach-imx/gpio.h>
+
+#define ONHOLD_GPIO			IMX_GPIO_NR(6, 16)
+#define I2C3_SCL_GPIO			IMX_GPIO_NR(1, 3)
+#define ECP5_PROGRAMN			IMX_GPIO_NR(1, 7)
+#define ECP5_INITN			IMX_GPIO_NR(4, 10)
+#define ECP5_DONE			IMX_GPIO_NR(1, 8)
+#define P_ON_LED			IMX_GPIO_NR(4, 11)
+#endif /* CONFIG_CCIMX6SBC_GEMMI */
+
 /* Carrier board version and ID commands */
 #define CONFIG_CMD_BOARD_VERSION
 #define CONFIG_CMD_BOARD_ID
@@ -75,6 +86,75 @@
 	"emmc_dev=" __stringify(EMMC_BOOT_DEV) "\0" \
 	"sd_dev=1\0"
 
+#ifdef CONFIG_CCIMX6SBC_GEMMI
+/*
+ * Boot from SD card by default: the installer sets the environment to boot
+ * from eMMC.
+ * for EMMC MMCDEV is 0
+ * for SD-CARD MMCDEV is 1
+ */
+#define GEMMI_MMCDEV			"1"
+#define GEMMI_MMCPART			"1"
+
+#define GEMMI_LOAD_MMC \
+	"loadzimage=load mmc " GEMMI_MMCDEV ":" GEMMI_MMCPART " 0x12000000 /boot/zImage\0" \
+	"loadfdt=load mmc " GEMMI_MMCDEV ":" GEMMI_MMCPART " 0x18000000 /boot/" CONFIG_DEFAULT_FDT_FILE "\0" \
+	"bootargs=console=" CONSOLE_DEV ",115200 root=/dev/mmcblk" GEMMI_MMCDEV "p" GEMMI_MMCPART " rootwait rw dmfc=3\0"
+
+/* Like CONFIG_DEFAULT_NETWORK_SETTINGS, with the GEMMI development IPs */
+#define GEMMI_NETWORK_SETTINGS \
+	"ethaddr=" DEFAULT_MAC_ETHADDR "\0" \
+	"wlanaddr=" DEFAULT_MAC_WLANADDR "\0" \
+	"btaddr=" DEFAULT_MAC_BTADDR "\0" \
+	"netmask=255.255.0.0\0" \
+	"serverip=192.168.112.228\0" \
+	"ipaddr=192.168.112.143\0" \
+	"rootpath=/exports/belp-rootfs\0" \
+	"zimage=zImage-4.9.184\0" \
+	"fdt_file=" CONFIG_DEFAULT_FDT_FILE "\0"
+
+#define CFG_EXTRA_ENV_SETTINGS \
+	CFG_MFG_ENV_SETTINGS \
+	GEMMI_LOAD_MMC \
+	GEMMI_NETWORK_SETTINGS \
+	"configgpios=gpio set GPIO1_7; i2c dev 1; " \
+		"i2c mw 0x58 0x1c 0xf0 1; i2c mw 0x58 0xc7 0x5f 1;\0" \
+	"dualboot=no\0" \
+	"bootlimit=0\0" \
+	"dboot_kernel_var=zimage\0" \
+	"loadscript=load mmc ${mmcbootdev}:${mmcpart} ${loadaddr} ${script}\0" \
+	"uimage=uImage-" CONFIG_SYS_BOARD ".bin\0" \
+	"fdt_addr=0x18000000\0" \
+	"phy_mode=auto\0" \
+	"console=" CONSOLE_DEV "\0" \
+	"fdt_high=0xffffffff\0" \
+	"initrd_high=0xffffffff\0" \
+	"update_addr=" __stringify(CONFIG_DIGI_UPDATE_ADDR) "\0" \
+	"mmcbootpart=" __stringify(EMMC_BOOT_PART) "\0" \
+	"mmcdev=0\0" \
+	"mmcpart=" BOOT_PARTITION "\0" \
+	"mmcargs=setenv bootargs console=${console},${baudrate} ${smp} " \
+		"root=/dev/mmcblk0p2 rootwait rw\0" \
+	"loaduimage=load mmc ${mmcdev}:${mmcpart} ${loadaddr} ${uimage}\0" \
+	"loadinitrd=load mmc ${mmcdev}:${mmcpart} ${initrd_addr} ${initrd_file}\0" \
+	"uboot_file=u-boot.imx\0" \
+	"boot_file=boot.img\0" \
+	"system_file=system.img\0" \
+	"bootargs_tftp_linux=run bootargs_tftp;" \
+		"setenv bootargs console=${console},${baudrate} " \
+		"${bootargs_linux} root=/dev/nfs " \
+		"${bootargs_ip} nfsroot=${serverip}:${rootpath},v3,tcp " \
+		"${bootargs_once} ${extra_bootargs}\0" \
+	"bootargs_tftp=" \
+		"if test ${ip_dyn} = yes; then " \
+			"bootargs_ip=\"ip=dhcp\";" \
+		"else " \
+			"bootargs_ip=\"ip=\\${ipaddr}:\\${serverip}:" \
+			"\\${gatewayip}:\\${netmask}:\\${hostname}:" \
+			"eth0:off\";" \
+		"fi;\0" \
+	""	/* end line */
+#else
 #define CFG_EXTRA_ENV_SETTINGS \
 	CFG_MFG_ENV_SETTINGS			\
 	CONFIG_DEFAULT_NETWORK_SETTINGS \
@@ -173,5 +253,6 @@
 		"fi;\0" \
 	"active_system=linux_a\0" \
 	""	/* end line */
+#endif /* CONFIG_CCIMX6SBC_GEMMI */
 
 #endif                         /* __CCIMX6SBC_CONFIG_H */

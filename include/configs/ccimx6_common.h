@@ -121,7 +121,9 @@
 #define CONFIG_PMIC_I2C_ADDR		0x58	/* DA9063 PMIC i2c address */
 #define CONFIG_PMIC_NUMREGS		0x185
 
+#ifndef CONFIG_CCIMX6SBC_GEMMI
 #define CONFIG_TFTP_UPDATE_ONTHEFLY      /* support to tftp and update on-the-fly */
+#endif
 
 /* Supported sources for update|dboot */
 #define CONFIG_SUPPORTED_SOURCES	((1 << SRC_TFTP) | \
@@ -141,7 +143,9 @@
 	DIGICMD_DBOOT_BLOCK_ARGS_HELP
 
 /* Digi PMIC command 'pmic' */
+#ifndef CONFIG_CCIMX6SBC_GEMMI
 #define CONFIG_CMD_DIGI_PMIC
+#endif
 
 /* Firmware update */
 #define CONFIG_UPDATE_SUPPORTED_SOURCES_LIST	\

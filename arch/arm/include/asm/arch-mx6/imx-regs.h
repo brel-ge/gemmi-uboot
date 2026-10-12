@@ -1068,7 +1068,10 @@ struct dbg_monitor_regs {
  */
 #include <stdbool.h>
 bool is_usb_boot(void);
+/* GEMMI always runs the regular bootcmd, also when loaded over USB */
+#ifndef CONFIG_CCIMX6SBC_GEMMI
 #define	is_boot_from_usb  is_usb_boot
+#endif
 #define	is_usbphy_power_on(void) (!(readl(USB_PHY0_BASE_ADDR) & (1<<20)))
 #define	disconnect_from_pc(void) writel(0x0, OTG_BASE_ADDR + 0x140)
 

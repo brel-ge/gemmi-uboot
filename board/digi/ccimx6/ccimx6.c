@@ -1779,7 +1779,9 @@ static int ccimx6_fixup(void)
 		}
 	}
 
-	ccimx6_detect_spurious_wakeup();
+	/* Spurious wake-up detection has always been disabled on GEMMI */
+	if (!IS_ENABLED(CONFIG_CCIMX6SBC_GEMMI))
+		ccimx6_detect_spurious_wakeup();
 
 	return 0;
 }

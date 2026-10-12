@@ -13,6 +13,15 @@ config SYS_CONFIG_NAME
 	string
 	default "ccimx6sbc"
 
+config CCIMX6SBC_GEMMI
+	bool "GEMMI carrier board"
+	depends on TARGET_CCIMX6QPSBC
+	help
+	  Customizations for the GEMMI carrier board, based on the
+	  ConnectCore 6 Plus SBC: board GPIO init (on-hold, ECP5 camera
+	  bridge, I2C3 bus recovery, power LEDs), boot environment and
+	  disabled spurious wake-up detection.
+
 source "board/digi/common/Kconfig"
 
 endif

@@ -10,3 +10,9 @@ F:	configs/ccimx6qsbc512MB_defconfig
 F:	configs/ccimx6dlsbc_defconfig
 F:	configs/ccimx6dlsbc512MB_defconfig
 F:	configs/ccimx6dlsbc256MB_defconfig
+
+GEMMI BOARD
+S:	Maintained
+F:	arch/arm/dts/imx6qp-gemmi.dts
+F:	arch/arm/dts/imx6qp-gemmi.dtsi
+F:	configs/gemmi_defconfig
