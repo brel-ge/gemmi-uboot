@@ -7,7 +7,7 @@
  *  option) any later version.
  */
 
-#include <common.h>
+#include <config.h>
 #include <errno.h>
 #include <dm.h>
 #include <malloc.h>

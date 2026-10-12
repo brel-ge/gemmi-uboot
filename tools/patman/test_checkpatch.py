@@ -472,7 +472,7 @@ index 0000000..2234c87
     def test_barred_include_common_h(self):
         """Test for adding common.h to a file"""
         pm = PatchMaker()
-        pm.add_line('include/myfile.h', '#include <common.h>')
+        pm.add_line('include/myfile.h', '#include <config.h>')
         self.check_single_message(pm, 'BARRED_INCLUDE_COMMON_H', 'error')
 
     def test_config_is_enabled_config(self):

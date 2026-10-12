@@ -20,7 +20,7 @@
  * MA 02111-1307 USA
  */
 
-#include <common.h>
+#include <config.h>
 #include <command.h>
 #include <linux/errno.h>
 #include "../board/digi/common/helper.h"

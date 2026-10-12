@@ -3,7 +3,7 @@
  * Copyright 2018-2023 Digi International Inc.
  */
 
-#include <common.h>
+#include <config.h>
 #include <dm.h>
 #include <image.h>
 #include <init.h>

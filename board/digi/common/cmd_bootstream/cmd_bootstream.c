@@ -11,7 +11,7 @@
  * Bootstream support for Freescale platforms
  */
 
-#include <common.h>
+#include <config.h>
 #include <asm/io.h>
 #if defined(CONFIG_CMD_BOOTSTREAM) && defined(CONFIG_CMD_NAND)
 #include <div64.h>

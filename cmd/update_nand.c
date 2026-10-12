@@ -11,7 +11,7 @@
 #include <asm/mach-imx/boot_mode.h>
 #endif
 #include <command.h>
-#include <common.h>
+#include <config.h>
 #include <env.h>
 #include <jffs2/load_kernel.h>
 #include <linux/mtd/mtd.h>

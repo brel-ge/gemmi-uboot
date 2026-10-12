@@ -6,7 +6,7 @@
 
 #include <dm.h>
 #include <dm/uclass.h>
-#include <common.h>
+#include <config.h>
 #include <i2c.h>
 #include "mca.h"
 #include "mca_registers.h"

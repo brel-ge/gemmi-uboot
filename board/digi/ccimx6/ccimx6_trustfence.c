@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: GPL-2.0+
  */
 
-#include <common.h>
+#include <config.h>
+#include <linux/string.h>
 #include <fsl_sec.h>
 #include <asm/mach-imx/hab.h>
 

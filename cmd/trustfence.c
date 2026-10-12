@@ -20,7 +20,9 @@
  * MA 02111-1307 USA
  */
 
-#include <common.h>
+#include <config.h>
+#include <vsprintf.h>
+#include <env.h>
 #include <command.h>
 #include <fuse.h>
 #include <memalign.h>

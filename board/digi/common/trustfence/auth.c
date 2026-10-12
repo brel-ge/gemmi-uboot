@@ -20,7 +20,7 @@
  * MA 02111-1307 USA
  */
 
-#include <common.h>
+#include <config.h>
 #include <env.h>
 #ifdef CONFIG_AHAB_BOOT
 #include <imx_container.h>

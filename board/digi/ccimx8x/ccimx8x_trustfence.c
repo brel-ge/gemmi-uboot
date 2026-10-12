@@ -5,7 +5,7 @@
  */
 
 #include <command.h>
-#include <common.h>
+#include <config.h>
 #include <fuse.h>
 #include <part.h>
 #include <stdlib.h>

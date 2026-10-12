@@ -19,7 +19,8 @@
  * GNU General Public License for more details.
  */
 #include <command.h>
-#include <common.h>
+#include <config.h>
+#include <env.h>
 #include <dm.h>
 #include <asm/io.h>
 #include <asm/arch/clock.h>
@@ -1406,7 +1407,7 @@ int board_mmc_get_env_part(int devno)
 				 * hardware partition: 0 */
 	case MMC4_BOOT:
 	default:
-		return CONFIG_SYS_MMC_ENV_PART;
+		return CONFIG_ENV_MMC_EMMC_HW_PARTITION;
 				/* When booting from SDHC4 (eMMC) the
 				 * environment will be saved to boot
 				 * partition 2 to protect it from

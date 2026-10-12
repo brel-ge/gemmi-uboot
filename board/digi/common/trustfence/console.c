@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: GPL-2.0+
  */
 
-#include <common.h>
+#include <config.h>
 #ifdef CONFIG_CONSOLE_ENABLE_GPIO
 #include <asm/gpio.h>
 #endif
