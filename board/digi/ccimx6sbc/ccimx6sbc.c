@@ -108,6 +108,8 @@ static iomux_v3_cfg_t const gemmi_pads[] = {
 	MX6_PAD_KEY_COL2__GPIO4_IO10 | MUX_PAD_CTRL(NO_PAD_CTRL),
 	/* P on led */
 	MX6_PAD_KEY_ROW2__GPIO4_IO11 | MUX_PAD_CTRL(NO_PAD_CTRL),
+	/* Display backlight enable */
+	MX6_PAD_EIM_D26__GPIO3_IO26 | MUX_PAD_CTRL(NO_PAD_CTRL),
 };
 
 static void setup_board_gemmi(void)
@@ -158,6 +160,14 @@ static void setup_board_gemmi(void)
 	 */
 	gpio_request(P_ON_LED, "P_ON_LED");
 	gpio_direction_output(P_ON_LED, 1);
+
+	/*
+	 * Enable the display backlight. The application takes the pin over
+	 * later through sysfs (kDsipBlEnNumber in 808_gemmi_app), Linux
+	 * keeps the level until then.
+	 */
+	gpio_request(DISP_BL_EN_GPIO, "DISP_BL_EN");
+	gpio_direction_output(DISP_BL_EN_GPIO, 1);
 
 	/*
 	 * The LDO_PU (VPU/GPU) target voltage of 1.175V that matches the value

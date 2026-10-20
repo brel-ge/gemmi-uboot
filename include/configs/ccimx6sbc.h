@@ -38,6 +38,7 @@
 #define ECP5_INITN			IMX_GPIO_NR(4, 10)
 #define ECP5_DONE			IMX_GPIO_NR(1, 8)
 #define P_ON_LED			IMX_GPIO_NR(4, 11)
+#define DISP_BL_EN_GPIO			IMX_GPIO_NR(3, 26)
 #endif /* CONFIG_CCIMX6SBC_GEMMI */
 
 /* Carrier board version and ID commands */
