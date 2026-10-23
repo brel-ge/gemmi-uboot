@@ -243,6 +243,20 @@ int setup_pmic_voltages_carrierboard(void)
 }
 #endif /* CONFIG_SYS_I2C_MXC */
 
+/*
+ * With DM_ETH board_eth_init() is no longer called, so the i.MX6QP
+ * ENET TX clock setup it used to do has to happen in board_init().
+ */
+static void setup_fec(void)
+{
+	if (is_mx6dqp()) {
+		/* select ENET MAC0 TX clock from PLL */
+		imx_iomux_set_gpr_register(5, 9, 1, 1);
+		if (enable_fec_anatop_clock(0, ENET_125MHZ))
+			printf("Error fec anatop clock settings!\n");
+	}
+}
+
 int board_get_enet_phy_addr(void)
 {
 	return phy_addr;
@@ -407,6 +421,9 @@ int board_init(void)
 	gd->bd->bi_boot_params = PHYS_SDRAM + 0x100;
 
 	ccimx6_init();
+
+	if (IS_ENABLED(CONFIG_FEC_MXC))
+		setup_fec();
 
 	/*
 	 * GEMMI is not a Digi SBC: leave the carrier board version/ID
