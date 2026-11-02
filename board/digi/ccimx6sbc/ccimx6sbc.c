@@ -110,6 +110,16 @@ static iomux_v3_cfg_t const gemmi_pads[] = {
 	MX6_PAD_KEY_ROW2__GPIO4_IO11 | MUX_PAD_CTRL(NO_PAD_CTRL),
 	/* Display backlight enable */
 	MX6_PAD_EIM_D26__GPIO3_IO26 | MUX_PAD_CTRL(NO_PAD_CTRL),
+	/*
+	 * ecp5 boot flash SPI (SCLK, MOSI, MISO, CS). Linux muxes these to
+	 * ECSPI2 and a warm reset does not reset the IOMUXC, so the i.MX would
+	 * still drive the flash bus while the ecp5 loads its bitstream after
+	 * the PROGRAMN pulse below. Release them as GPIO inputs.
+	 */
+	MX6_PAD_CSI0_DAT8__GPIO5_IO26 | MUX_PAD_CTRL(NO_PAD_CTRL),
+	MX6_PAD_CSI0_DAT9__GPIO5_IO27 | MUX_PAD_CTRL(NO_PAD_CTRL),
+	MX6_PAD_CSI0_DAT10__GPIO5_IO28 | MUX_PAD_CTRL(NO_PAD_CTRL),
+	MX6_PAD_CSI0_DAT11__GPIO5_IO29 | MUX_PAD_CTRL(NO_PAD_CTRL),
 };
 
 static void setup_board_gemmi(void)
